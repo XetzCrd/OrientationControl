@@ -15,13 +15,11 @@ ICM_20948_I2C myICM; // Otherwise create an ICM_20948_I2C object
 
 void printPaddedInt16b(int16_t val);
 void printFormattedFloat(float val, uint8_t leading, uint8_t decimals);
-void PrintCalibratedValue(String name, float &max, float &min);
 void PrintIMUData(float a, float b, float c);
-void Get_max_min(float a, float &max, float &min);
 void printScaledAGMT(ICM_20948_I2C *sensor, int times, int s);
 
 void setup(){
-  SERIAL_PORT.begin(115200);
+  SERIAL_PORT.begin(9600);
   while (!SERIAL_PORT);
 
   WIRE_PORT.begin();
@@ -48,8 +46,6 @@ void setup(){
 
 void loop(){
   printScaledAGMT(&myICM, 1000, ACC);
-  printScaledAGMT(&myICM, 1000, GYR);
-  printScaledAGMT(&myICM, 1000, MAG);
   while(1);
 }
 
@@ -137,24 +133,9 @@ void printFormattedFloat(float val, uint8_t leading, uint8_t decimals)
     SERIAL_PORT.print(val, decimals);
   }
 }
-void Get_max_min(float a, float &max, float &min){
-	
-	if(a > max){
-	 max = a;
-	}
-	
-	if(a < min){
-	 min = a;
-	}
-}
-void PrintCalibratedValue(String name, float &max, float &min){
-  SERIAL_PORT.print(name); SERIAL_PORT.print(": "); SERIAL_PORT.println((max+min)/2);
-}
 
 void printScaledAGMT(ICM_20948_I2C *sensor, int times, int s){  
   float x = 0, y=0, z=0; //axis variables
-  float mx = 0, my = 0, mz = 0; //min axis variables
-  float Mx = 0, My = 0, Mz = 0; //max axis variables
 
   for(int k=0; k<times; k++){
     if (myICM.dataReady()){
@@ -183,36 +164,11 @@ void printScaledAGMT(ICM_20948_I2C *sensor, int times, int s){
     
       PrintIMUData(x, y, z);
       if(k < times - 1) SERIAL_PORT.print(","); 
-
-      Get_max_min(x, Mx, mx);
-      Get_max_min(y, My, my);
-      Get_max_min(z, Mz, mz);
-      
       delay(1);
     }
   }
 
-  if(s == ACC){ //accelerometer data
-    SERIAL_PORT.println("Acc (mg): ");
-    PrintCalibratedValue("ax", Mx, mx);
-    PrintCalibratedValue("ay", My, my);
-    PrintCalibratedValue("az", Mz, mz);
-  }
-
-  if(s == GYR){ //gyroscope data
-    SERIAL_PORT.println("Gyr (DPS): ");
-    PrintCalibratedValue("gx", Mx, mx);
-    PrintCalibratedValue("gy", My, my);
-    PrintCalibratedValue("gz", Mz, mz);
-  }
-
-  if(s == MAG){ //magnetometer data
-    SERIAL_PORT.println("Mag (uT): ");
-    PrintCalibratedValue("mx", Mx, mx);
-    PrintCalibratedValue("my", My, my);
-    PrintCalibratedValue("mz", Mz, mz);
-  }
-  
+  SERIAL_PORT.println();   
 }
 
 void PrintIMUData(float a, float b, float c)
